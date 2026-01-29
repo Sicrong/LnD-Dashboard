@@ -1,0 +1,1682 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Moodle L&D Dashboard (Mock)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      /* Light, Moodle-ish */
+      --bg:#f5f6f8;
+      --panel:#ffffff;
+      --text:#1f2a37;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --accent:#2563eb;
+      --accent2:#0ea5e9;
+      --good:#16a34a;
+      --shadow: 0 1px 2px rgba(0,0,0,.06);
+      --radius: 12px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    header{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .wrap{ max-width: 1200px; margin: 0 auto; padding: 14px 16px; }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 280px;
+    }
+
+    .logo{
+      width:30px;
+      height:30px;
+      border-radius: 8px;
+      background: var(--accent);
+    }
+
+    .brand h1{ font-size: 14px; margin:0; }
+    .brand p{ font-size: 12px; margin:0; color: var(--muted); }
+
+    /* Controls (filters) */
+    .filters{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .control{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .control label{ font-size: 12px; color: var(--muted); white-space:nowrap; }
+
+    select{
+      border:0;
+      outline:none;
+      background: transparent;
+      color: var(--text);
+      font-size: 12px;
+      min-width: 180px;
+    }
+
+    .btn{
+      cursor:pointer;
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    /* Multi-select dropdown */
+    .multiSelect{
+      position: relative;
+      min-width: 200px;
+    }
+
+    .multiSelectBtn{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text);
+      min-width: 180px;
+    }
+
+    .multiSelectBtn:hover{
+      border-color: var(--accent);
+    }
+
+    .multiSelectBtn .label{
+      color: var(--muted);
+      margin-right: 4px;
+    }
+
+    .multiSelectBtn .value{
+      flex: 1;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .multiSelectBtn .arrow{
+      font-size: 10px;
+      color: var(--muted);
+      transition: transform .2s;
+    }
+
+    .multiSelect.open .arrow{
+      transform: rotate(180deg);
+    }
+
+    .multiSelectDropdown{
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.12);
+      z-index: 100;
+      display: none;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .multiSelect.open .multiSelectDropdown{
+      display: block;
+    }
+
+    .multiSelectItem{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background .15s;
+    }
+
+    .multiSelectItem:hover{
+      background: #f8fafc;
+    }
+
+    .multiSelectItem input[type="checkbox"]{
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .multiSelectItem.selectAll{
+      border-bottom: 1px solid var(--line);
+      font-weight: 600;
+    }
+
+    .multiSelectActions{
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      border-top: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 0 0 10px 10px;
+    }
+
+    .multiSelectActions .btn{
+      flex: 1;
+      text-align: center;
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+
+    .multiSelectActions .btnApply{
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    main{ padding: 14px 0 38px; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 12px;
+    }
+
+    .card{
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .card h2{ margin:0 0 4px; font-size: 13px; }
+    .sub{ margin:0; font-size: 12px; color: var(--muted); }
+
+    /* KPI area (system-level) */
+    .kpis{ grid-column: 1 / -1; display:grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .kpi{ grid-column: span 6; }
+    .kpi .value{ font-size: 26px; font-weight: 800; margin-top: 8px; }
+    .kpi .hint{ font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+    .kpiSplit{
+      display:flex;
+      align-items:stretch;
+      gap:12px;
+      margin-top: 10px;
+    }
+
+    .kpiBox{
+      flex:1;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fafafa;
+    }
+
+    .kpiBox .miniTitle{ font-size: 11px; color: var(--muted); font-weight: 700; }
+    .kpiBox .miniValue{ font-size: 20px; font-weight: 800; margin-top: 6px; }
+    .kpiBox .miniHint{ font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* Tabs + filters bar lives UNDER KPI line */
+    .tabsFiltersRow{ grid-column: 1 / -1; }
+
+    .tabsFiltersBar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap:wrap;
+    }
+
+    .tabs{
+      display:inline-flex;
+      border:1px solid var(--line);
+      border-radius: 12px;
+      overflow:hidden;
+      box-shadow: var(--shadow);
+      background: var(--panel);
+      width: fit-content;
+    }
+
+    .tab{
+      cursor:pointer;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      border:0;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .tab[aria-selected="true"]{
+      background: rgba(37,99,235,.10);
+      color: var(--text);
+    }
+
+    /* Sub-tabs (Programs / Courses) */
+    .subTabsWrap{
+      margin-bottom: 4px;
+    }
+
+    .subTabs{
+      display:inline-flex;
+      border:1px solid var(--line);
+      border-radius: 8px;
+      overflow:hidden;
+      background: #f8fafc;
+    }
+
+    .subTab{
+      cursor:pointer;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      border:0;
+      background: transparent;
+      color: var(--muted);
+      transition: background .15s, color .15s;
+    }
+
+    .subTab[aria-selected="true"]{
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* Horizontal scroll wrapper for coverage charts */
+    .chartScrollWrap{
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 8px;
+    }
+
+    .chartScrollWrap::-webkit-scrollbar{
+      height: 8px;
+    }
+
+    .chartScrollWrap::-webkit-scrollbar-track{
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    .chartScrollWrap::-webkit-scrollbar-thumb{
+      background: #c1c1c1;
+      border-radius: 4px;
+    }
+
+    .chartScrollWrap::-webkit-scrollbar-thumb:hover{
+      background: #a1a1a1;
+    }
+
+    .chartInner{
+      min-width: 600px;
+      position: relative;
+    }
+
+    .chartInner canvas{
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .span6{ grid-column: span 6; }
+    .span12{ grid-column: 1 / -1; }
+
+    .row{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 10px;
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .dot{ width:8px; height:8px; border-radius:999px; background: var(--accent); }
+
+    .note{ margin-top: 10px; font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+    .hidden{ display:none !important; }
+
+    /* “Clock” widget */
+    .clockWrap{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-top: 10px;
+    }
+
+    .clockText .miniTitle{ font-size: 11px; color: var(--muted); font-weight: 700; }
+    .clockText .miniValue{ font-size: 20px; font-weight: 800; margin-top: 6px; }
+    .clockText .miniHint{ font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    svg{ display:block; }
+
+    @media (max-width: 980px){
+      .kpi{ grid-column: span 12; }
+      .kpiSplit{ flex-direction:column; }
+      select{ min-width: 160px; }
+      .filters{ justify-content:flex-start; }
+      .tabsFiltersBar{ align-items:flex-start; }
+    }
+
+    @media (max-width: 520px){
+      select{ min-width: 140px; }
+      .clockWrap{ flex-direction:column; align-items:flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>Moodle L&D Dashboard (Mock)</h1>
+            <p>Light MVP • System KPIs on top • Filters next to tabs</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <!-- SYSTEM KPIs (company-level; NOT tab-specific) -->
+      <section class="kpis" id="kpis"></section>
+
+      <!-- Tabs + Filters (for the section below) -->
+      <div class="tabsFiltersRow" style="margin-top:12px;">
+        <div class="tabsFiltersBar">
+          <div class="tabs" role="tablist" aria-label="Dashboard tabs">
+            <button class="tab" id="tabRequired" role="tab" aria-controls="panelRequired" aria-selected="true">Required</button>
+            <button class="tab" id="tabOptional" role="tab" aria-controls="panelOptional" aria-selected="false">Optional</button>
+          </div>
+
+          <div class="filters" aria-label="Filters for charts below">
+            <div class="control">
+              <label for="fYear">Year</label>
+              <select id="fYear"></select>
+            </div>
+            <div class="multiSelect" id="teamFilter">
+              <div class="multiSelectBtn" id="teamFilterBtn">
+                <span class="label">Teams</span>
+                <span class="value" id="teamFilterValue">All</span>
+                <span class="arrow">▼</span>
+              </div>
+              <div class="multiSelectDropdown" id="teamFilterDropdown">
+                <div class="multiSelectItem selectAll">
+                  <input type="checkbox" id="teamAll" checked>
+                  <label for="teamAll">All Teams</label>
+                </div>
+                <div id="teamCheckboxes"></div>
+                <div class="multiSelectActions">
+                  <button class="btn btnApply" id="teamApply">Apply</button>
+                  <button class="btn" id="teamClear">Clear</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn" id="reset">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- REQUIRED TAB -->
+      <section id="panelRequired" role="tabpanel" aria-labelledby="tabRequired" style="margin-top:12px;">
+        <!-- Sub-tabs: Programs / Courses -->
+        <div class="subTabsWrap">
+          <div class="subTabs" role="tablist" aria-label="Required sub-tabs">
+            <button class="subTab" id="subTabReqPrograms" role="tab" aria-controls="panelReqPrograms" aria-selected="true">Programs</button>
+            <button class="subTab" id="subTabReqCourses" role="tab" aria-controls="panelReqCourses" aria-selected="false">Courses</button>
+          </div>
+        </div>
+
+        <!-- Required Programs Panel -->
+        <div id="panelReqPrograms" class="grid" role="tabpanel" aria-labelledby="subTabReqPrograms" style="margin-top:12px;">
+        <div class="card span12">
+          <div class="row">
+            <div>
+                <h2>Required Programs — Monthly activity</h2>
+                <p class="sub">Enrolled / Started / Completed per month — each required program</p>
+            </div>
+            <div class="pill"><span class="dot"></span> Month view only</div>
+            </div>
+            <div class="grid" style="margin-top:10px;" id="requiredProgramsCharts"></div>
+            <div class="note">Programs: Onboarding Program, Program X, Program Y, Program Z. Filters apply.</div>
+          </div>
+
+          <div class="card span12">
+            <div class="row">
+              <div>
+                <h2>Coverage — Required programs by team</h2>
+                <p class="sub">Enrolled / Started / Completed — % of team members with ≥1 required program</p>
+              </div>
+              <div class="pill">No user list in MVP</div>
+            </div>
+            <div class="chartScrollWrap" style="margin-top:10px;">
+              <div class="chartInner">
+                <canvas id="chartDeptReqPrograms"></canvas>
+              </div>
+            </div>
+            <div class="note">Shows the funnel: how many enrolled → started → completed at least one required program.</div>
+          </div>
+        </div>
+
+        <!-- Required Courses Panel -->
+        <div id="panelReqCourses" class="grid hidden" role="tabpanel" aria-labelledby="subTabReqCourses" style="margin-top:12px;">
+          <div class="card span12">
+            <div class="row">
+              <div>
+                <h2>Required Courses — Monthly activity</h2>
+                <p class="sub">Enrolled / Started / Completed per month — each required course</p>
+              </div>
+              <div class="pill"><span class="dot"></span> Month view only</div>
+            </div>
+          <div class="grid" style="margin-top:10px;" id="requiredCoursesCharts"></div>
+            <div class="note">Courses: HIPAA, Client X Skills, Business Communication, Excel Fundamentals. Filters apply.</div>
+        </div>
+
+        <div class="card span12">
+          <div class="row">
+            <div>
+                <h2>Coverage — Required courses by team</h2>
+                <p class="sub">Enrolled / Started / Completed — % of team members with ≥1 required course</p>
+            </div>
+            <div class="pill">No user list in MVP</div>
+          </div>
+            <div class="chartScrollWrap" style="margin-top:10px;">
+              <div class="chartInner">
+                <canvas id="chartDeptReqCourses"></canvas>
+              </div>
+            </div>
+            <div class="note">Shows the funnel: how many enrolled → started → completed at least one required course.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- OPTIONAL TAB -->
+      <section id="panelOptional" class="hidden" role="tabpanel" aria-labelledby="tabOptional" style="margin-top:12px;">
+        <!-- Sub-tabs: Programs / Courses -->
+        <div class="subTabsWrap">
+          <div class="subTabs" role="tablist" aria-label="Optional sub-tabs">
+            <button class="subTab" id="subTabOptPrograms" role="tab" aria-controls="panelOptPrograms" aria-selected="true">Programs</button>
+            <button class="subTab" id="subTabOptCourses" role="tab" aria-controls="panelOptCourses" aria-selected="false">Courses</button>
+          </div>
+        </div>
+
+        <!-- Optional Programs Panel -->
+        <div id="panelOptPrograms" class="grid" role="tabpanel" aria-labelledby="subTabOptPrograms" style="margin-top:12px;">
+        <div class="card span12">
+          <div class="row">
+            <div>
+                <h2>Optional Programs — Monthly activity</h2>
+                <p class="sub">Enrolled / Started / Completed per month — each optional program</p>
+            </div>
+            <div class="pill"><span class="dot"></span> Month view only</div>
+            </div>
+            <div class="grid" style="margin-top:10px;" id="optionalProgramsCharts"></div>
+            <div class="note">Programs: Leadership Development, Advanced Skills Program. Filters apply.</div>
+          </div>
+
+          <div class="card span12">
+            <div class="row">
+              <div>
+                <h2>Coverage — Optional programs by team</h2>
+                <p class="sub">Enrolled / Started / Completed — % of team members with ≥1 optional program</p>
+              </div>
+              <div class="pill">No user list in MVP</div>
+            </div>
+            <div class="chartScrollWrap" style="margin-top:10px;">
+              <div class="chartInner">
+                <canvas id="chartDeptOptPrograms"></canvas>
+              </div>
+            </div>
+            <div class="note">Shows the funnel: how many enrolled → started → completed at least one optional program.</div>
+          </div>
+        </div>
+
+        <!-- Optional Courses Panel -->
+        <div id="panelOptCourses" class="grid hidden" role="tabpanel" aria-labelledby="subTabOptCourses" style="margin-top:12px;">
+          <div class="card span12">
+            <div class="row">
+              <div>
+                <h2>Optional Courses — Monthly activity</h2>
+                <p class="sub">Enrolled / Started / Completed per month — each optional course</p>
+              </div>
+              <div class="pill"><span class="dot"></span> Month view only</div>
+            </div>
+          <div class="grid" style="margin-top:10px;" id="optionalCoursesCharts"></div>
+            <div class="note">Courses: Negotiation Skills, IP Ranking, Project Management. Filters apply.</div>
+        </div>
+
+        <div class="card span12">
+          <div class="row">
+            <div>
+                <h2>Coverage — Optional courses by team</h2>
+                <p class="sub">Enrolled / Started / Completed — % of team members with ≥1 optional course</p>
+            </div>
+            <div class="pill">No user list in MVP</div>
+          </div>
+            <div class="chartScrollWrap" style="margin-top:10px;">
+              <div class="chartInner">
+                <canvas id="chartDeptOptCourses"></canvas>
+              </div>
+            </div>
+            <div class="note">Shows the funnel: how many enrolled → started → completed at least one optional course.</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+<script>
+  'use strict';
+
+  // ------------------------------------------------------------
+  // Mock Data Model (edit here)
+  // ------------------------------------------------------------
+
+  // Company headcount (from HRIS in real life; mocked here)
+  const COMPANY_HEADCOUNT = 120;
+
+  // "Learning activities" lifecycle (mock)
+  // inMoodle = created/live in Moodle
+  // inProgress = currently being built
+  // requested = requested by stakeholders (total)
+  const activityLifecycle = {
+    inProgress: 10,
+    requested: 12
+  };
+
+  // Programs in Moodle (subset, mocked)
+  // Programs are collections of courses, tracked the same way (enrolled/started/completed)
+  const programs = [
+    // Required
+    { id:'ONB_PROG', name:'Onboarding Program', required:true },
+    { id:'PROG_X', name:'Program X', required:true },
+    { id:'PROG_Y', name:'Program Y', required:true },
+    { id:'PROG_Z', name:'Program Z', required:true },
+
+    // Optional
+    { id:'OPT_PROG_A', name:'Leadership Development', required:false },
+    { id:'OPT_PROG_B', name:'Advanced Skills Program', required:false },
+  ];
+
+  // Courses in Moodle (subset, mocked)
+  const courses = [
+    // Required
+    { id:'HIPAA', name:'HIPAA', required:true },
+    { id:'CLX', name:'Client X Skills', required:true },
+    { id:'BC', name:'Business Communication', required:true },
+    { id:'EXCEL', name:'Excel Fundamentals', required:true },
+
+    // Optional
+    { id:'NEG', name:'Negotiation Skills', required:false },
+    { id:'IPR', name:'IP Ranking', required:false },
+    { id:'PM', name:'Project Management', required:false },
+  ];
+
+  // Users (only for computing aggregates; no user list is shown)
+  // Many teams for horizontal scroll demo
+  const users = [
+    // Team 1 - 5 people
+    { id:'U01', dept:'Team 1' },
+    { id:'U02', dept:'Team 1' },
+    { id:'U03', dept:'Team 1' },
+    { id:'U04', dept:'Team 1' },
+    { id:'U05', dept:'Team 1' },
+    // Team 2 - 4 people
+    { id:'U06', dept:'Team 2' },
+    { id:'U07', dept:'Team 2' },
+    { id:'U08', dept:'Team 2' },
+    { id:'U09', dept:'Team 2' },
+    // Team 3 - 5 people
+    { id:'U10', dept:'Team 3' },
+    { id:'U11', dept:'Team 3' },
+    { id:'U12', dept:'Team 3' },
+    { id:'U13', dept:'Team 3' },
+    { id:'U14', dept:'Team 3' },
+    // Team 4 - 3 people
+    { id:'U15', dept:'Team 4' },
+    { id:'U16', dept:'Team 4' },
+    { id:'U17', dept:'Team 4' },
+    // Team 5 - 4 people
+    { id:'U18', dept:'Team 5' },
+    { id:'U19', dept:'Team 5' },
+    { id:'U20', dept:'Team 5' },
+    { id:'U21', dept:'Team 5' },
+    // Team 6 - 3 people
+    { id:'U22', dept:'Team 6' },
+    { id:'U23', dept:'Team 6' },
+    { id:'U24', dept:'Team 6' },
+    // Team 7 - 4 people
+    { id:'U25', dept:'Team 7' },
+    { id:'U26', dept:'Team 7' },
+    { id:'U27', dept:'Team 7' },
+    { id:'U28', dept:'Team 7' },
+    // Team 8 - 3 people
+    { id:'U29', dept:'Team 8' },
+    { id:'U30', dept:'Team 8' },
+    { id:'U31', dept:'Team 8' },
+    // Example - 2 people
+    { id:'U32', dept:'Example' },
+    { id:'U33', dept:'Example' },
+  ];
+
+  // Program enrollment events (mock) - diverse data for clear visualization
+  const programEnrollments = [
+    // ========== Team 1 (5 people) - HIGH performers: 100% enrolled, 80% started, 60% completed ==========
+    { userId:'U01', programId:'ONB_PROG', enrolledAt:'2025-01-05', startedAt:'2025-01-06', completedAt:'2025-01-25' },
+    { userId:'U02', programId:'ONB_PROG', enrolledAt:'2025-01-15', startedAt:'2025-01-16', completedAt:'2025-02-10' },
+    { userId:'U03', programId:'ONB_PROG', enrolledAt:'2025-02-01', startedAt:'2025-02-02', completedAt:'2025-02-28' },
+    { userId:'U04', programId:'ONB_PROG', enrolledAt:'2025-03-01', startedAt:'2025-03-02', completedAt:null },
+    { userId:'U05', programId:'ONB_PROG', enrolledAt:'2025-03-10', startedAt:null, completedAt:null },
+
+    // ========== Team 2 (4 people) - MEDIUM: 75% enrolled, 50% started, 25% completed ==========
+    { userId:'U06', programId:'ONB_PROG', enrolledAt:'2025-04-05', startedAt:'2025-04-06', completedAt:'2025-04-28' },
+    { userId:'U07', programId:'ONB_PROG', enrolledAt:'2025-05-01', startedAt:'2025-05-02', completedAt:null },
+    { userId:'U08', programId:'ONB_PROG', enrolledAt:'2025-06-01', startedAt:null, completedAt:null },
+    // U09 - not enrolled
+
+    // ========== Team 3 (5 people) - LOW: 40% enrolled, 20% started, 20% completed ==========
+    { userId:'U10', programId:'ONB_PROG', enrolledAt:'2025-02-01', startedAt:'2025-02-02', completedAt:'2025-02-20' },
+    { userId:'U11', programId:'ONB_PROG', enrolledAt:'2025-03-05', startedAt:null, completedAt:null },
+    // U12, U13, U14 - not enrolled
+
+    // ========== Team 4 (3 people) - EXCELLENT: 100% enrolled, 100% started, 67% completed ==========
+    { userId:'U15', programId:'ONB_PROG', enrolledAt:'2025-01-20', startedAt:'2025-01-21', completedAt:'2025-02-15' },
+    { userId:'U16', programId:'ONB_PROG', enrolledAt:'2025-03-15', startedAt:'2025-03-16', completedAt:'2025-04-05' },
+    { userId:'U17', programId:'ONB_PROG', enrolledAt:'2025-05-01', startedAt:'2025-05-02', completedAt:null },
+
+    // ========== Team 5 (4 people) - MEDIUM-HIGH: 100% enrolled, 75% started, 50% completed ==========
+    { userId:'U18', programId:'ONB_PROG', enrolledAt:'2025-04-01', startedAt:'2025-04-02', completedAt:'2025-04-20' },
+    { userId:'U19', programId:'ONB_PROG', enrolledAt:'2025-05-10', startedAt:'2025-05-11', completedAt:'2025-05-30' },
+    { userId:'U20', programId:'ONB_PROG', enrolledAt:'2025-02-01', startedAt:'2025-02-02', completedAt:null },
+    { userId:'U21', programId:'ONB_PROG', enrolledAt:'2025-03-15', startedAt:null, completedAt:null },
+
+    // ========== Team 6 (3 people) - JUST STARTED: 67% enrolled, 33% started, 0% completed ==========
+    { userId:'U22', programId:'ONB_PROG', enrolledAt:'2025-06-01', startedAt:'2025-06-02', completedAt:null },
+    { userId:'U23', programId:'ONB_PROG', enrolledAt:'2025-06-05', startedAt:null, completedAt:null },
+    // U24 - not enrolled
+
+    // ========== Team 7 (4 people) - GOOD: 75% enrolled, 75% started, 50% completed ==========
+    { userId:'U25', programId:'ONB_PROG', enrolledAt:'2025-02-01', startedAt:'2025-02-02', completedAt:'2025-03-01' },
+    { userId:'U26', programId:'ONB_PROG', enrolledAt:'2025-03-15', startedAt:'2025-03-16', completedAt:'2025-04-10' },
+    { userId:'U27', programId:'ONB_PROG', enrolledAt:'2025-04-20', startedAt:'2025-04-21', completedAt:null },
+    // U28 - not enrolled
+
+    // ========== Team 8 (3 people) - VERY LOW: 33% enrolled, 33% started, 33% completed ==========
+    { userId:'U29', programId:'ONB_PROG', enrolledAt:'2025-03-01', startedAt:'2025-03-02', completedAt:'2025-03-28' },
+    // U30, U31 - not enrolled
+
+    // ========== Example (2 people) - PERFECT: 100% enrolled, 100% started, 100% completed ==========
+    { userId:'U32', programId:'ONB_PROG', enrolledAt:'2025-01-10', startedAt:'2025-01-11', completedAt:'2025-02-05' },
+    { userId:'U33', programId:'ONB_PROG', enrolledAt:'2025-02-15', startedAt:'2025-02-16', completedAt:'2025-03-10' },
+
+    // Additional program enrollments for variety
+    { userId:'U01', programId:'PROG_X', enrolledAt:'2025-02-01', startedAt:'2025-02-02', completedAt:'2025-02-20' },
+    { userId:'U15', programId:'PROG_X', enrolledAt:'2025-03-05', startedAt:'2025-03-06', completedAt:'2025-03-25' },
+    { userId:'U25', programId:'PROG_Y', enrolledAt:'2025-04-10', startedAt:'2025-04-11', completedAt:null },
+
+    // Optional programs
+    { userId:'U02', programId:'OPT_PROG_A', enrolledAt:'2025-02-01', startedAt:'2025-02-02', completedAt:'2025-03-01' },
+    { userId:'U10', programId:'OPT_PROG_A', enrolledAt:'2025-03-15', startedAt:'2025-03-16', completedAt:null },
+    { userId:'U18', programId:'OPT_PROG_A', enrolledAt:'2025-04-20', startedAt:'2025-04-21', completedAt:'2025-05-15' },
+    { userId:'U32', programId:'OPT_PROG_B', enrolledAt:'2025-03-01', startedAt:'2025-03-02', completedAt:'2025-03-28' },
+    { userId:'U22', programId:'OPT_PROG_B', enrolledAt:'2025-04-10', startedAt:'2025-04-11', completedAt:null },
+  ];
+
+  // Course enrollment events (mock) - diverse data for clear visualization
+  const courseEnrollments = [
+    // ========== Team 1 (5 people) - EXCELLENT: 100% enrolled, 80% started, 60% completed ==========
+    { userId:'U01', courseId:'BC', enrolledAt:'2025-01-10', startedAt:'2025-01-12', completedAt:'2025-01-28' },
+    { userId:'U02', courseId:'BC', enrolledAt:'2025-01-20', startedAt:'2025-02-02', completedAt:'2025-02-20' },
+    { userId:'U03', courseId:'BC', enrolledAt:'2025-02-05', startedAt:'2025-02-06', completedAt:'2025-02-28' },
+    { userId:'U04', courseId:'BC', enrolledAt:'2025-03-01', startedAt:'2025-03-02', completedAt:null },
+    { userId:'U05', courseId:'BC', enrolledAt:'2025-03-11', startedAt:null, completedAt:null },
+
+    // ========== Team 2 (4 people) - MEDIUM: 75% enrolled, 50% started, 25% completed ==========
+    { userId:'U06', courseId:'BC', enrolledAt:'2025-04-09', startedAt:'2025-04-11', completedAt:'2025-04-25' },
+    { userId:'U07', courseId:'BC', enrolledAt:'2025-05-02', startedAt:'2025-05-02', completedAt:null },
+    { userId:'U08', courseId:'BC', enrolledAt:'2025-06-14', startedAt:null, completedAt:null },
+    // U09 - not enrolled
+
+    // ========== Team 3 (5 people) - LOW: 60% enrolled, 40% started, 20% completed ==========
+    { userId:'U10', courseId:'HIPAA', enrolledAt:'2025-01-07', startedAt:'2025-01-07', completedAt:'2025-01-08' },
+    { userId:'U11', courseId:'HIPAA', enrolledAt:'2025-02-01', startedAt:'2025-02-01', completedAt:null },
+    { userId:'U12', courseId:'HIPAA', enrolledAt:'2025-04-10', startedAt:null, completedAt:null },
+    // U13, U14 - not enrolled
+
+    // ========== Team 4 (3 people) - HIGH: 100% enrolled, 100% started, 67% completed ==========
+    { userId:'U15', courseId:'CLX', enrolledAt:'2025-03-02', startedAt:'2025-03-03', completedAt:'2025-03-20' },
+    { userId:'U16', courseId:'CLX', enrolledAt:'2025-05-19', startedAt:'2025-05-21', completedAt:'2025-06-10' },
+    { userId:'U17', courseId:'CLX', enrolledAt:'2025-06-01', startedAt:'2025-06-02', completedAt:null },
+
+    // ========== Team 5 (4 people) - GOOD: 100% enrolled, 75% started, 50% completed ==========
+    { userId:'U18', courseId:'EXCEL', enrolledAt:'2025-02-01', startedAt:'2025-02-02', completedAt:'2025-02-15' },
+    { userId:'U19', courseId:'EXCEL', enrolledAt:'2025-03-10', startedAt:'2025-03-11', completedAt:'2025-03-25' },
+    { userId:'U20', courseId:'EXCEL', enrolledAt:'2025-04-05', startedAt:'2025-04-06', completedAt:null },
+    { userId:'U21', courseId:'EXCEL', enrolledAt:'2025-05-20', startedAt:null, completedAt:null },
+
+    // ========== Team 6 (3 people) - JUST ENROLLED: 100% enrolled, 33% started, 0% completed ==========
+    { userId:'U22', courseId:'BC', enrolledAt:'2025-06-01', startedAt:'2025-06-02', completedAt:null },
+    { userId:'U23', courseId:'BC', enrolledAt:'2025-06-05', startedAt:null, completedAt:null },
+    { userId:'U24', courseId:'BC', enrolledAt:'2025-06-10', startedAt:null, completedAt:null },
+
+    // ========== Team 7 (4 people) - MEDIUM-HIGH: 75% enrolled, 50% started, 50% completed ==========
+    { userId:'U25', courseId:'HIPAA', enrolledAt:'2025-02-15', startedAt:'2025-02-16', completedAt:'2025-03-02' },
+    { userId:'U26', courseId:'HIPAA', enrolledAt:'2025-03-09', startedAt:'2025-03-12', completedAt:'2025-04-01' },
+    { userId:'U27', courseId:'HIPAA', enrolledAt:'2025-04-01', startedAt:null, completedAt:null },
+    // U28 - not enrolled
+
+    // ========== Team 8 (3 people) - VERY LOW: 33% enrolled, 33% started, 0% completed ==========
+    { userId:'U29', courseId:'CLX', enrolledAt:'2025-02-10', startedAt:'2025-02-12', completedAt:null },
+    // U30, U31 - not enrolled
+
+    // ========== Example (2 people) - PERFECT: 100% enrolled, 100% started, 100% completed ==========
+    { userId:'U32', courseId:'BC', enrolledAt:'2025-03-15', startedAt:'2025-03-16', completedAt:'2025-04-10' },
+    { userId:'U33', courseId:'BC', enrolledAt:'2025-04-20', startedAt:'2025-04-21', completedAt:'2025-05-15' },
+
+    // Optional courses
+    { userId:'U01', courseId:'NEG', enrolledAt:'2025-02-15', startedAt:'2025-02-16', completedAt:'2025-03-02' },
+    { userId:'U10', courseId:'NEG', enrolledAt:'2025-03-09', startedAt:'2025-03-12', completedAt:null },
+    { userId:'U18', courseId:'NEG', enrolledAt:'2025-04-01', startedAt:'2025-04-02', completedAt:'2025-04-20' },
+    { userId:'U25', courseId:'IPR', enrolledAt:'2025-02-10', startedAt:'2025-02-12', completedAt:'2025-02-22' },
+    { userId:'U32', courseId:'PM', enrolledAt:'2025-03-15', startedAt:'2025-03-16', completedAt:'2025-04-10' },
+    { userId:'U06', courseId:'PM', enrolledAt:'2025-04-20', startedAt:'2025-04-21', completedAt:null },
+  ];
+
+  // ------------------------------------------------------------
+  // Tiny "tests" (console.assert) — keeps the prototype stable
+  // ------------------------------------------------------------
+  function runSelfTests(){
+    console.assert(Array.isArray(courses) && courses.length > 0, 'courses should be a non-empty array');
+    console.assert(Array.isArray(programs) && programs.length > 0, 'programs should be a non-empty array');
+    console.assert(Array.isArray(users) && users.length > 0, 'users should be a non-empty array');
+    console.assert(Array.isArray(courseEnrollments), 'courseEnrollments should be an array');
+    console.assert(Array.isArray(programEnrollments), 'programEnrollments should be an array');
+
+    console.assert(document.getElementById('fYear'), 'DOM missing #fYear');
+    console.assert(document.getElementById('teamFilter'), 'DOM missing #teamFilter');
+    console.assert(document.getElementById('kpis'), 'DOM missing #kpis');
+
+    console.assert(document.getElementById('tabRequired'), 'DOM missing #tabRequired');
+    console.assert(document.getElementById('tabOptional'), 'DOM missing #tabOptional');
+
+    console.assert(document.getElementById('panelRequired'), 'DOM missing #panelRequired');
+    console.assert(document.getElementById('panelOptional'), 'DOM missing #panelOptional');
+
+    // Sub-panels
+    console.assert(document.getElementById('panelReqPrograms'), 'DOM missing #panelReqPrograms');
+    console.assert(document.getElementById('panelReqCourses'), 'DOM missing #panelReqCourses');
+    console.assert(document.getElementById('panelOptPrograms'), 'DOM missing #panelOptPrograms');
+    console.assert(document.getElementById('panelOptCourses'), 'DOM missing #panelOptCourses');
+  }
+
+  // ------------------------------------------------------------
+  // Helpers
+  // ------------------------------------------------------------
+  const $ = (id) => document.getElementById(id);
+
+  function uniq(arr){ return [...new Set(arr)].sort(); }
+
+  function monthKey(dateStr){
+    if (!dateStr) return null;
+    return dateStr.slice(0,7); // YYYY-MM
+  }
+
+  function pct(n, d){
+    if (!d) return '—';
+    return `${Math.round((n/d)*100)}%`;
+  }
+
+  function listYears(){
+    const courseYears = courseEnrollments.map(e => (e.enrolledAt || '').slice(0,4)).filter(Boolean);
+    const programYears = programEnrollments.map(e => (e.enrolledAt || '').slice(0,4)).filter(Boolean);
+    return uniq([...courseYears, ...programYears]);
+  }
+
+  function monthsInYear(year){
+    return Array.from({length:12}, (_,i) => `${year}-${String(i+1).padStart(2,'0')}`);
+  }
+
+  function getFilteredUserIds(){
+    const teams = getSelectedTeams();
+    return users
+      .filter(u => teams.includes(u.dept))
+      .map(u => u.id);
+  }
+
+  function courseIdsByType(required){
+    return courses.filter(c => c.required === required).map(c => c.id);
+  }
+
+  function programIdsByType(required){
+    return programs.filter(p => p.required === required).map(p => p.id);
+  }
+
+  // ------------------------------------------------------------
+  // KPI metrics (system-level)
+  // ------------------------------------------------------------
+  function systemCoverage(){
+    // L&D Coverage: people who completed ≥1 learning activity (course OR program) / company headcount
+    const completedCourseUserIds = new Set(courseEnrollments.filter(e => !!e.completedAt).map(e => e.userId));
+    const completedProgramUserIds = new Set(programEnrollments.filter(e => !!e.completedAt).map(e => e.userId));
+    const allCompletedUserIds = new Set([...completedCourseUserIds, ...completedProgramUserIds]);
+    const covered = allCompletedUserIds.size;
+
+    // Completion rate (default): completed enrollments / total enrollments (both courses + programs)
+    const totalEnrollments = courseEnrollments.length + programEnrollments.length;
+    const completedEnrollments = courseEnrollments.filter(e => !!e.completedAt).length + programEnrollments.filter(e => !!e.completedAt).length;
+
+    return { coveredUsers: covered, headcount: COMPANY_HEADCOUNT, totalEnrollments, completedEnrollments };
+  }
+
+  function renderKPIs(){
+    const kpisEl = $('kpis');
+    if (!kpisEl) return;
+
+    const cov = systemCoverage();
+
+    const coveragePct = pct(cov.coveredUsers, cov.headcount);
+    const completionPct = pct(cov.completedEnrollments, cov.totalEnrollments);
+
+    const inMoodle = courses.length + programs.length;
+    const inProgress = activityLifecycle.inProgress;
+    const requested = activityLifecycle.requested;
+
+    // “clock” = how much of requested is already live in Moodle
+    const progress = requested ? Math.min(1, inMoodle / requested) : 0;
+    const r = 18;
+    const c = 2 * Math.PI * r;
+    const dash = Math.round(c * progress);
+    const gap = Math.round(c - dash);
+
+    const items = [
+      {
+        title: 'L&D coverage & completion rate',
+        html: `
+          <div class="kpiSplit">
+            <div class="kpiBox">
+              <div class="miniTitle">L&D coverage</div>
+              <div class="miniValue">${coveragePct}</div>
+              <div class="miniHint">${cov.coveredUsers} people completed ≥1 activity / ${cov.headcount} headcount</div>
+            </div>
+            <div class="kpiBox">
+              <div class="miniTitle">Completion rate</div>
+              <div class="miniValue">${completionPct}</div>
+              <div class="miniHint">${cov.completedEnrollments} completed / ${cov.totalEnrollments} enrollments</div>
+            </div>
+          </div>
+          <div class="hint" style="margin-top:10px;">System-level KPIs (not tab-specific).</div>
+        `
+      },
+      {
+        title: 'Learning activities in Moodle',
+        html: `
+          <div class="clockWrap">
+            <svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+              <circle cx="24" cy="24" r="18" fill="none" stroke="rgba(229,231,235,1)" stroke-width="6" />
+              <circle cx="24" cy="24" r="18" fill="none" stroke="rgba(37,99,235,.9)" stroke-width="6" stroke-linecap="round"
+                stroke-dasharray="${dash} ${gap}" transform="rotate(-90 24 24)" />
+            </svg>
+            <div class="clockText">
+              <div class="miniTitle">Lifecycle overview (mock)</div>
+              <div class="miniValue">${inMoodle} live • ${inProgress} in progress • ${requested} requested</div>
+              <div class="miniHint">Clock shows “live / requested” (${Math.round(progress*100)}%).</div>
+            </div>
+          </div>
+          <div class="hint" style="margin-top:10px;">Renamed from “Courses in Moodle” and merged with pipeline.</div>
+        `
+      }
+    ];
+
+    kpisEl.innerHTML = items.map(x => `
+      <div class="card kpi">
+        <h2>${x.title}</h2>
+        ${x.html}
+      </div>
+    `).join('');
+  }
+
+  // ------------------------------------------------------------
+  // Charts
+  // ------------------------------------------------------------
+  let chartDeptReqPrograms = null;
+  let chartDeptReqCourses = null;
+  let chartDeptOptPrograms = null;
+  let chartDeptOptCourses = null;
+
+  const requiredProgramChartInstances = new Map();
+  const requiredCourseChartInstances = new Map();
+  const optionalProgramChartInstances = new Map();
+  const optionalCourseChartInstances = new Map();
+
+  function destroyCharts(map){
+    for (const ch of map.values()) ch.destroy();
+    map.clear();
+  }
+
+  function renderMonthlyChartsForCourses({ required, containerId, instanceMap }){
+    const yearSel = $('fYear');
+    const year = yearSel ? yearSel.value : listYears()[0];
+
+    const userIds = getFilteredUserIds();
+    const months = monthsInYear(year);
+    const container = $(containerId);
+    if (!container) return;
+
+    destroyCharts(instanceMap);
+    container.innerHTML = '';
+
+    courses.filter(c => c.required === required).forEach(course => {
+      const rowsForCourse = courseEnrollments.filter(e => e.courseId === course.id && userIds.includes(e.userId));
+
+      const dataByMonth = months.map(m => {
+        const enrolledRaw = rowsForCourse.filter(e => monthKey(e.enrolledAt) === m).length;
+        const startedRaw = rowsForCourse.filter(e => monthKey(e.startedAt) === m).length;
+        const completedRaw = rowsForCourse.filter(e => monthKey(e.completedAt) === m).length;
+
+        // VISUAL SCALING (mock only): makes charts readable
+        return {
+          m,
+          enrolled: enrolledRaw * 25,
+          started: Math.round(startedRaw * 20),
+          completed: Math.round(completedRaw * 18),
+        };
+      });
+
+      const totalEnrolledRaw = rowsForCourse.length;
+      const totalCompletedRaw = rowsForCourse.filter(e => !!e.completedAt).length;
+
+      const totalEnrolled = totalEnrolledRaw * 25;
+      const totalCompleted = totalCompletedRaw * 18;
+
+      const card = document.createElement('div');
+      card.className = 'card span6';
+      card.innerHTML = `
+        <h2>${course.name}</h2>
+        <p class="sub">All-time: ${totalCompleted}/${totalEnrolled} completed (${pct(totalCompleted,totalEnrolled)})</p>
+        <canvas height="120"></canvas>
+      `;
+      container.appendChild(card);
+
+      const ctx = card.querySelector('canvas');
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: dataByMonth.map(x => x.m),
+          datasets: [
+            { label:'Enrolled',  data: dataByMonth.map(x=>x.enrolled),  backgroundColor:'rgba(37,99,235,.18)' },
+            { label:'Started',   data: dataByMonth.map(x=>x.started),   backgroundColor:'rgba(14,165,233,.16)' },
+            { label:'Completed', data: dataByMonth.map(x=>x.completed), backgroundColor:'rgba(22,163,74,.16)' },
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position:'top', labels:{ color:'#374151', boxWidth:10 } },
+            tooltip: { enabled:true }
+          },
+          scales: {
+            x: { ticks:{ color:'#6b7280', maxRotation:0 }, grid:{ color:'rgba(229,231,235,.9)' } },
+            y: { ticks:{ color:'#6b7280', precision:0 }, grid:{ color:'rgba(229,231,235,.9)' } }
+          }
+        }
+      });
+
+      instanceMap.set(course.id, chart);
+    });
+  }
+
+  function renderMonthlyChartsForPrograms({ required, containerId, instanceMap }){
+    const yearSel = $('fYear');
+    const year = yearSel ? yearSel.value : listYears()[0];
+
+    const userIds = getFilteredUserIds();
+    const months = monthsInYear(year);
+    const container = $(containerId);
+    if (!container) return;
+
+    destroyCharts(instanceMap);
+    container.innerHTML = '';
+
+    programs.filter(p => p.required === required).forEach(program => {
+      const rowsForProgram = programEnrollments.filter(e => e.programId === program.id && userIds.includes(e.userId));
+
+      const dataByMonth = months.map(m => {
+        const enrolledRaw = rowsForProgram.filter(e => monthKey(e.enrolledAt) === m).length;
+        const startedRaw = rowsForProgram.filter(e => monthKey(e.startedAt) === m).length;
+        const completedRaw = rowsForProgram.filter(e => monthKey(e.completedAt) === m).length;
+
+        // VISUAL SCALING (mock only): makes charts readable
+        return {
+          m,
+          enrolled: enrolledRaw * 25,
+          started: Math.round(startedRaw * 20),
+          completed: Math.round(completedRaw * 18),
+        };
+      });
+
+      const totalEnrolledRaw = rowsForProgram.length;
+      const totalCompletedRaw = rowsForProgram.filter(e => !!e.completedAt).length;
+
+      const totalEnrolled = totalEnrolledRaw * 25;
+      const totalCompleted = totalCompletedRaw * 18;
+
+      const card = document.createElement('div');
+      card.className = 'card span6';
+      card.innerHTML = `
+        <h2>${program.name}</h2>
+        <p class="sub">All-time: ${totalCompleted}/${totalEnrolled} completed (${pct(totalCompleted,totalEnrolled)})</p>
+        <canvas height="120"></canvas>
+      `;
+      container.appendChild(card);
+
+      const ctx = card.querySelector('canvas');
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: dataByMonth.map(x => x.m),
+          datasets: [
+            { label:'Enrolled',  data: dataByMonth.map(x=>x.enrolled),  backgroundColor:'rgba(139,92,246,.18)' },
+            { label:'Started',   data: dataByMonth.map(x=>x.started),   backgroundColor:'rgba(236,72,153,.16)' },
+            { label:'Completed', data: dataByMonth.map(x=>x.completed), backgroundColor:'rgba(16,185,129,.16)' },
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position:'top', labels:{ color:'#374151', boxWidth:10 } },
+            tooltip: { enabled:true }
+          },
+          scales: {
+            x: { ticks:{ color:'#6b7280', maxRotation:0 }, grid:{ color:'rgba(229,231,235,.9)' } },
+            y: { ticks:{ color:'#6b7280', precision:0 }, grid:{ color:'rgba(229,231,235,.9)' } }
+          }
+        }
+      });
+
+      instanceMap.set(program.id, chart);
+    });
+  }
+
+  function renderDeptCoverageChartForCourses({ required, canvasId, chartRefSetter }){
+    const yearSel = $('fYear');
+    const year = yearSel ? yearSel.value : listYears()[0];
+
+    const targetCourseIds = courseIdsByType(required);
+    const selectedDepts = getSelectedTeams();
+    const depts = selectedDepts;
+
+    const coverage = depts.map(d => {
+      const deptUsers = users.filter(u => u.dept === d).map(u => u.id);
+
+      // Enrolled: users who enrolled in at least 1 course
+      const enrolledUsers = new Set(
+        courseEnrollments
+          .filter(e => targetCourseIds.includes(e.courseId))
+          .filter(e => deptUsers.includes(e.userId))
+          .filter(e => (e.enrolledAt || '').startsWith(year))
+          .map(e => e.userId)
+      );
+
+      // Started: users who started at least 1 course
+      const startedUsers = new Set(
+        courseEnrollments
+          .filter(e => targetCourseIds.includes(e.courseId))
+          .filter(e => deptUsers.includes(e.userId))
+          .filter(e => (e.startedAt || '').startsWith(year))
+          .map(e => e.userId)
+      );
+
+      // Completed: users who completed at least 1 course
+      const completedUsers = new Set(
+        courseEnrollments
+          .filter(e => targetCourseIds.includes(e.courseId))
+          .filter(e => deptUsers.includes(e.userId))
+          .filter(e => (e.completedAt || '').startsWith(year))
+          .map(e => e.userId)
+      );
+
+      return { 
+        dept: d, 
+        total: deptUsers.length, 
+        enrolled: enrolledUsers.size,
+        started: startedUsers.size,
+        completed: completedUsers.size 
+      };
+    });
+
+    const ctxEl = $(canvasId);
+    if (!ctxEl) return;
+
+    const data = {
+      labels: coverage.map(x => x.dept),
+      datasets: [
+        {
+          label: 'Enrolled',
+          data: coverage.map(x => x.total ? Math.round((x.enrolled/x.total)*100) : 0),
+        borderWidth: 1,
+        borderColor: 'rgba(37,99,235,.9)',
+          backgroundColor: 'rgba(37,99,235,.25)',
+        },
+        {
+          label: 'Started',
+          data: coverage.map(x => x.total ? Math.round((x.started/x.total)*100) : 0),
+          borderWidth: 1,
+          borderColor: 'rgba(14,165,233,.9)',
+          backgroundColor: 'rgba(14,165,233,.25)',
+        },
+        {
+          label: 'Completed',
+          data: coverage.map(x => x.total ? Math.round((x.completed/x.total)*100) : 0),
+          borderWidth: 1,
+          borderColor: 'rgba(22,163,74,.9)',
+          backgroundColor: 'rgba(22,163,74,.25)',
+        }
+      ]
+    };
+
+    const opts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins:{
+        legend:{ position:'top', labels:{ color:'#374151', boxWidth:12 } },
+        tooltip:{
+          callbacks:{
+            label: (ctx) => {
+              const row = coverage[ctx.dataIndex];
+              const field = ctx.dataset.label.toLowerCase();
+              const val = row[field];
+              const pctVal = Math.round((val/Math.max(1,row.total))*100);
+              return `${ctx.dataset.label}: ${val}/${row.total} (${pctVal}%)`;
+            }
+          }
+        }
+      },
+      scales:{
+        x:{ ticks:{ color:'#6b7280' }, grid:{ display:false } },
+        y:{
+          ticks:{ color:'#6b7280', callback:(v)=> v + '%' },
+          grid:{ color:'rgba(229,231,235,.9)' },
+          suggestedMax: 100
+        }
+      }
+    };
+
+    // Set container width based on number of teams for horizontal scroll
+    const barWidth = 100; // pixels per team group
+    const minWidth = coverage.length * barWidth;
+    const container = ctxEl.parentElement;
+    if (container) {
+      container.style.width = Math.max(minWidth, 600) + 'px';
+      container.style.height = '200px';
+    }
+
+    chartRefSetter((prev) => {
+      if (prev) prev.destroy();
+      return new Chart(ctxEl, { type:'bar', data, options: opts });
+    });
+  }
+
+  function renderDeptCoverageChartForPrograms({ required, canvasId, chartRefSetter }){
+    const yearSel = $('fYear');
+    const year = yearSel ? yearSel.value : listYears()[0];
+
+    const targetProgramIds = programIdsByType(required);
+    const selectedDepts = getSelectedTeams();
+    const depts = selectedDepts;
+
+    const coverage = depts.map(d => {
+      const deptUsers = users.filter(u => u.dept === d).map(u => u.id);
+
+      // Enrolled: users who enrolled in at least 1 program
+      const enrolledUsers = new Set(
+        programEnrollments
+          .filter(e => targetProgramIds.includes(e.programId))
+          .filter(e => deptUsers.includes(e.userId))
+          .filter(e => (e.enrolledAt || '').startsWith(year))
+          .map(e => e.userId)
+      );
+
+      // Started: users who started at least 1 program
+      const startedUsers = new Set(
+        programEnrollments
+          .filter(e => targetProgramIds.includes(e.programId))
+          .filter(e => deptUsers.includes(e.userId))
+          .filter(e => (e.startedAt || '').startsWith(year))
+          .map(e => e.userId)
+      );
+
+      // Completed: users who completed at least 1 program
+      const completedUsers = new Set(
+        programEnrollments
+          .filter(e => targetProgramIds.includes(e.programId))
+          .filter(e => deptUsers.includes(e.userId))
+          .filter(e => (e.completedAt || '').startsWith(year))
+          .map(e => e.userId)
+      );
+
+      return { 
+        dept: d, 
+        total: deptUsers.length, 
+        enrolled: enrolledUsers.size,
+        started: startedUsers.size,
+        completed: completedUsers.size 
+      };
+    });
+
+    const ctxEl = $(canvasId);
+    if (!ctxEl) return;
+
+    const data = {
+      labels: coverage.map(x => x.dept),
+      datasets: [
+        {
+          label: 'Enrolled',
+          data: coverage.map(x => x.total ? Math.round((x.enrolled/x.total)*100) : 0),
+          borderWidth: 1,
+          borderColor: 'rgba(139,92,246,.9)',
+          backgroundColor: 'rgba(139,92,246,.25)',
+        },
+        {
+          label: 'Started',
+          data: coverage.map(x => x.total ? Math.round((x.started/x.total)*100) : 0),
+          borderWidth: 1,
+          borderColor: 'rgba(236,72,153,.9)',
+          backgroundColor: 'rgba(236,72,153,.25)',
+        },
+        {
+          label: 'Completed',
+          data: coverage.map(x => x.total ? Math.round((x.completed/x.total)*100) : 0),
+          borderWidth: 1,
+          borderColor: 'rgba(16,185,129,.9)',
+          backgroundColor: 'rgba(16,185,129,.25)',
+        }
+      ]
+    };
+
+    const opts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins:{
+        legend:{ position:'top', labels:{ color:'#374151', boxWidth:12 } },
+        tooltip:{
+          callbacks:{
+            label: (ctx) => {
+              const row = coverage[ctx.dataIndex];
+              const field = ctx.dataset.label.toLowerCase();
+              const val = row[field];
+              const pctVal = Math.round((val/Math.max(1,row.total))*100);
+              return `${ctx.dataset.label}: ${val}/${row.total} (${pctVal}%)`;
+            }
+          }
+        }
+      },
+      scales:{
+        x:{ ticks:{ color:'#6b7280' }, grid:{ display:false } },
+        y:{
+          ticks:{ color:'#6b7280', callback:(v)=> v + '%' },
+          grid:{ color:'rgba(229,231,235,.9)' },
+          suggestedMax: 100
+        }
+      }
+    };
+
+    // Set container width based on number of teams for horizontal scroll
+    const barWidth = 100; // pixels per team group
+    const minWidth = coverage.length * barWidth;
+    const container = ctxEl.parentElement;
+    if (container) {
+      container.style.width = Math.max(minWidth, 600) + 'px';
+      container.style.height = '200px';
+    }
+
+    chartRefSetter((prev) => {
+      if (prev) prev.destroy();
+      return new Chart(ctxEl, { type:'bar', data, options: opts });
+    });
+  }
+
+  // ------------------------------------------------------------
+  // Filters
+  // ------------------------------------------------------------
+  let selectedTeams = []; // empty = all teams
+
+  function renderFilters(){
+    const fYear = $('fYear');
+
+    if (!fYear) return;
+
+    const years = listYears();
+    fYear.innerHTML = years.map(y => `<option>${y}</option>`).join('');
+
+    // defaults
+    fYear.value = years.includes('2025') ? '2025' : (years[0] || '2025');
+
+    // Render team checkboxes
+    renderTeamCheckboxes();
+  }
+
+  function renderTeamCheckboxes(){
+    const container = $('teamCheckboxes');
+    if (!container) return;
+
+    const teams = uniq(users.map(u => u.dept));
+    container.innerHTML = teams.map(team => `
+      <div class="multiSelectItem">
+        <input type="checkbox" id="team_${team.replace(/\s+/g, '_')}" value="${team}" class="teamCheckbox">
+        <label for="team_${team.replace(/\s+/g, '_')}">${team}</label>
+      </div>
+    `).join('');
+  }
+
+  function getSelectedTeams(){
+    // If "All" is checked or nothing specific selected, return all teams
+    const allCheckbox = $('teamAll');
+    if (allCheckbox && allCheckbox.checked) {
+      return uniq(users.map(u => u.dept));
+    }
+    
+    // Otherwise return selected teams
+    if (selectedTeams.length === 0) {
+      return uniq(users.map(u => u.dept));
+    }
+    return selectedTeams;
+  }
+
+  function updateTeamFilterDisplay(){
+    const valueEl = $('teamFilterValue');
+    if (!valueEl) return;
+
+    const allCheckbox = $('teamAll');
+    if (allCheckbox && allCheckbox.checked) {
+      valueEl.textContent = 'All';
+      return;
+    }
+
+    if (selectedTeams.length === 0) {
+      valueEl.textContent = 'All';
+    } else if (selectedTeams.length === 1) {
+      valueEl.textContent = selectedTeams[0];
+    } else {
+      valueEl.textContent = `${selectedTeams.length} teams`;
+    }
+  }
+
+  function wireTeamFilter(){
+    const filterEl = $('teamFilter');
+    const btnEl = $('teamFilterBtn');
+    const dropdownEl = $('teamFilterDropdown');
+    const allCheckbox = $('teamAll');
+    const applyBtn = $('teamApply');
+    const clearBtn = $('teamClear');
+
+    if (!filterEl || !btnEl) return;
+
+    // Toggle dropdown
+    btnEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      filterEl.classList.toggle('open');
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (!filterEl.contains(e.target)) {
+        filterEl.classList.remove('open');
+      }
+    });
+
+    // "All Teams" checkbox
+    if (allCheckbox) {
+      allCheckbox.addEventListener('change', () => {
+        const checkboxes = document.querySelectorAll('.teamCheckbox');
+        if (allCheckbox.checked) {
+          checkboxes.forEach(cb => cb.checked = false);
+          selectedTeams = [];
+        }
+        updateTeamFilterDisplay();
+      });
+    }
+
+    // Individual team checkboxes
+    document.addEventListener('change', (e) => {
+      if (e.target.classList.contains('teamCheckbox')) {
+        const allCb = $('teamAll');
+        if (allCb) allCb.checked = false;
+
+        // Update selected teams
+        const checkboxes = document.querySelectorAll('.teamCheckbox:checked');
+        selectedTeams = Array.from(checkboxes).map(cb => cb.value);
+
+        // If none selected, check "All"
+        if (selectedTeams.length === 0 && allCb) {
+          allCb.checked = true;
+        }
+
+        updateTeamFilterDisplay();
+      }
+    });
+
+    // Apply button
+    if (applyBtn) {
+      applyBtn.addEventListener('click', () => {
+        filterEl.classList.remove('open');
+        renderCharts();
+      });
+    }
+
+    // Clear button
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        const allCb = $('teamAll');
+        if (allCb) allCb.checked = true;
+        document.querySelectorAll('.teamCheckbox').forEach(cb => cb.checked = false);
+        selectedTeams = [];
+        updateTeamFilterDisplay();
+      });
+    }
+  }
+
+  // ------------------------------------------------------------
+  // Tabs
+  // ------------------------------------------------------------
+  let activeTab = 'required';
+  let activeSubTab = { required: 'programs', optional: 'programs' };
+
+  function setActiveTab(tab){
+    activeTab = tab;
+
+    const reqBtn = $('tabRequired');
+    const optBtn = $('tabOptional');
+    const reqPanel = $('panelRequired');
+    const optPanel = $('panelOptional');
+
+    if (reqBtn) reqBtn.setAttribute('aria-selected', tab === 'required' ? 'true' : 'false');
+    if (optBtn) optBtn.setAttribute('aria-selected', tab === 'optional' ? 'true' : 'false');
+
+    if (reqPanel) reqPanel.classList.toggle('hidden', tab !== 'required');
+    if (optPanel) optPanel.classList.toggle('hidden', tab !== 'optional');
+
+    renderCharts();
+  }
+
+  function setActiveSubTab(mainTab, subTab){
+    activeSubTab[mainTab] = subTab;
+
+    if (mainTab === 'required') {
+      const progBtn = $('subTabReqPrograms');
+      const courseBtn = $('subTabReqCourses');
+      const progPanel = $('panelReqPrograms');
+      const coursePanel = $('panelReqCourses');
+
+      if (progBtn) progBtn.setAttribute('aria-selected', subTab === 'programs' ? 'true' : 'false');
+      if (courseBtn) courseBtn.setAttribute('aria-selected', subTab === 'courses' ? 'true' : 'false');
+      if (progPanel) progPanel.classList.toggle('hidden', subTab !== 'programs');
+      if (coursePanel) coursePanel.classList.toggle('hidden', subTab !== 'courses');
+    } else {
+      const progBtn = $('subTabOptPrograms');
+      const courseBtn = $('subTabOptCourses');
+      const progPanel = $('panelOptPrograms');
+      const coursePanel = $('panelOptCourses');
+
+      if (progBtn) progBtn.setAttribute('aria-selected', subTab === 'programs' ? 'true' : 'false');
+      if (courseBtn) courseBtn.setAttribute('aria-selected', subTab === 'courses' ? 'true' : 'false');
+      if (progPanel) progPanel.classList.toggle('hidden', subTab !== 'programs');
+      if (coursePanel) coursePanel.classList.toggle('hidden', subTab !== 'courses');
+    }
+
+    renderCharts();
+  }
+
+  function wireTabs(){
+    const reqBtn = $('tabRequired');
+    const optBtn = $('tabOptional');
+    if (reqBtn) reqBtn.addEventListener('click', () => setActiveTab('required'));
+    if (optBtn) optBtn.addEventListener('click', () => setActiveTab('optional'));
+
+    // Sub-tabs for Required
+    const subReqProg = $('subTabReqPrograms');
+    const subReqCourse = $('subTabReqCourses');
+    if (subReqProg) subReqProg.addEventListener('click', () => setActiveSubTab('required', 'programs'));
+    if (subReqCourse) subReqCourse.addEventListener('click', () => setActiveSubTab('required', 'courses'));
+
+    // Sub-tabs for Optional
+    const subOptProg = $('subTabOptPrograms');
+    const subOptCourse = $('subTabOptCourses');
+    if (subOptProg) subOptProg.addEventListener('click', () => setActiveSubTab('optional', 'programs'));
+    if (subOptCourse) subOptCourse.addEventListener('click', () => setActiveSubTab('optional', 'courses'));
+  }
+
+  // ------------------------------------------------------------
+  // Wiring
+  // ------------------------------------------------------------
+  function wireFilters(){
+    const fYear = $('fYear');
+    const reset = $('reset');
+
+    if (fYear) fYear.addEventListener('change', renderCharts);
+
+    // Wire team multi-select filter
+    wireTeamFilter();
+
+    if (reset) reset.addEventListener('click', () => {
+      const years = listYears();
+      if (fYear) fYear.value = years.includes('2025') ? '2025' : (years[0] || '2025');
+      
+      // Reset team filter to "All"
+      const allCb = $('teamAll');
+      if (allCb) allCb.checked = true;
+      document.querySelectorAll('.teamCheckbox').forEach(cb => cb.checked = false);
+      selectedTeams = [];
+      updateTeamFilterDisplay();
+      
+      renderCharts();
+    });
+  }
+
+  // ------------------------------------------------------------
+  // Main render
+  // ------------------------------------------------------------
+  function renderCharts(){
+    if (activeTab === 'required') {
+      const subTab = activeSubTab.required;
+      if (subTab === 'programs') {
+        renderMonthlyChartsForPrograms({ required:true, containerId:'requiredProgramsCharts', instanceMap: requiredProgramChartInstances });
+        renderDeptCoverageChartForPrograms({ required:true, canvasId:'chartDeptReqPrograms', chartRefSetter: (setter) => { chartDeptReqPrograms = setter(chartDeptReqPrograms); } });
+      } else {
+        renderMonthlyChartsForCourses({ required:true, containerId:'requiredCoursesCharts', instanceMap: requiredCourseChartInstances });
+        renderDeptCoverageChartForCourses({ required:true, canvasId:'chartDeptReqCourses', chartRefSetter: (setter) => { chartDeptReqCourses = setter(chartDeptReqCourses); } });
+      }
+    }
+
+    if (activeTab === 'optional') {
+      const subTab = activeSubTab.optional;
+      if (subTab === 'programs') {
+        renderMonthlyChartsForPrograms({ required:false, containerId:'optionalProgramsCharts', instanceMap: optionalProgramChartInstances });
+        renderDeptCoverageChartForPrograms({ required:false, canvasId:'chartDeptOptPrograms', chartRefSetter: (setter) => { chartDeptOptPrograms = setter(chartDeptOptPrograms); } });
+      } else {
+        renderMonthlyChartsForCourses({ required:false, containerId:'optionalCoursesCharts', instanceMap: optionalCourseChartInstances });
+        renderDeptCoverageChartForCourses({ required:false, canvasId:'chartDeptOptCourses', chartRefSetter: (setter) => { chartDeptOptCourses = setter(chartDeptOptCourses); } });
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderFilters();
+    runSelfTests();
+
+    // System KPIs always on top
+    renderKPIs();
+
+    wireTabs();
+    wireFilters();
+
+    setActiveTab('required');
+  });
+</script>
+</body>
+</html>
